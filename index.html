@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jccc_0310's blog</title>
+    <link rel="icon" href="https://github.com/Jccc0310.png" />
+    <!-- Tailwind CSS (使用 CDN 快速原型开发) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Katex CSS for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+
+    <!-- Tailwind Config -->
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Noto Sans SC"', 'Inter', 'system-ui', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            },
+            animation: {
+              first: "moveVertical 30s ease infinite",
+              second: "moveInCircle 20s reverse infinite",
+              third: "moveInCircle 40s linear infinite",
+              fourth: "moveHorizontal 40s ease infinite",
+              fifth: "moveInCircle 20s ease infinite",
+            },
+            keyframes: {
+              moveHorizontal: {
+                "0%": {
+                  transform: "translateX(-50%) translateY(-10%)",
+                },
+                "50%": {
+                  transform: "translateX(50%) translateY(10%)",
+                },
+                "100%": {
+                  transform: "translateX(-50%) translateY(-10%)",
+                },
+              },
+              moveInCircle: {
+                "0%": {
+                  transform: "rotate(0deg)",
+                },
+                "50%": {
+                  transform: "rotate(180deg)",
+                },
+                "100%": {
+                  transform: "rotate(360deg)",
+                },
+              },
+              moveVertical: {
+                "0%": {
+                  transform: "translateY(-50%)",
+                },
+                "50%": {
+                  transform: "translateY(50%)",
+                },
+                "100%": {
+                  transform: "translateY(-50%)",
+                },
+              },
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        background-color: #f8fafc;
+        transition: background-color 0.5s ease;
+        -webkit-font-smoothing: antialiased;
+      }
+      .dark body {
+        background-color: #020202;
+      }
+      
+      /* 噪点纹理覆盖 */
+      .bg-noise {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.03; 
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      }
+      .dark .bg-noise {
+        opacity: 0.05;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(156, 163, 175, 0.5);
+        border-radius: 4px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(156, 163, 175, 0.8);
+      }
+      
+      /* Utility for glass effect */
+      .glass-panel {
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+      }
+      
+      .prose code {
+        background-color: transparent !important;
+        padding: 0 !important;
+        border-radius: 0;
+        font-weight: 500;
+      }
+      .prose pre {
+        background-color: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+    </style>
+
+<link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
+    "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0",
+    "react-syntax-highlighter": "https://aistudiocdn.com/react-syntax-highlighter@^16.1.0",
+    "react-syntax-highlighter/": "https://aistudiocdn.com/react-syntax-highlighter@^16.1.0/",
+    "@giscus/react": "https://aistudiocdn.com/@giscus/react@^3.1.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "rehype-katex": "https://aistudiocdn.com/rehype-katex@^7.0.1",
+    "remark-gfm": "https://aistudiocdn.com/remark-gfm@^4.0.1",
+    "remark-math": "https://aistudiocdn.com/remark-math@^6.0.0",
+    "buffer": "https://aistudiocdn.com/buffer@^6.0.3",
+    "gray-matter": "https://aistudiocdn.com/gray-matter@^4.0.3"
+  }
+}
+</script>
+  <script type="module" crossorigin src="./assets/index-DpuGKcPL.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+    <!-- 关键修复：引入 Vite 入口文件 -->
+  </body>
+</html>
