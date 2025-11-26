@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jccc_0310's blog</title>
-    <link rel="icon" href="https://github.com/Jccc0310.png" />
+    <link rel="icon" href="https://cdn.luogu.com.cn/upload/usericon/809339.png" />
     <!-- Tailwind CSS (使用 CDN 快速原型开发) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -35,6 +35,7 @@
               fifth: "moveInCircle 20s ease infinite",
               marquee: "marquee var(--duration) linear infinite",
               "marquee-vertical": "marquee-vertical var(--duration) linear infinite",
+              float: "float 6s ease-in-out infinite",
             },
             keyframes: {
               marquee: {
@@ -78,6 +79,10 @@
                   transform: "translateY(-50%)",
                 },
               },
+              float: {
+                "0%, 100%": { transform: "translateY(0)" },
+                "50%": { transform: "translateY(-10px)" },
+              }
             },
           },
         },
@@ -146,29 +151,33 @@
     </style>
 
 <link rel="stylesheet" href="/index.css">
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
-    "rehype-katex": "https://aistudiocdn.com/rehype-katex@^7.0.1",
-    "remark-gfm": "https://aistudiocdn.com/remark-gfm@^4.0.1",
-    "react-syntax-highlighter/": "https://aistudiocdn.com/react-syntax-highlighter@^16.1.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
+    "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0",
     "react-syntax-highlighter": "https://aistudiocdn.com/react-syntax-highlighter@^16.1.0",
+    "react-syntax-highlighter/": "https://aistudiocdn.com/react-syntax-highlighter@^16.1.0/",
     "remark-math": "https://aistudiocdn.com/remark-math@^6.0.0",
+    "remark-gfm": "https://aistudiocdn.com/remark-gfm@^4.0.1",
+    "rehype-katex": "https://aistudiocdn.com/rehype-katex@^7.0.1",
+    "@giscus/react": "https://aistudiocdn.com/@giscus/react@^3.1.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
     "front-matter": "https://aistudiocdn.com/front-matter@^4.0.2",
-    "@giscus/react": "https://aistudiocdn.com/@giscus/react@^3.1.0"
+    "fuse.js": "https://aistudiocdn.com/fuse.js@^7.1.0",
+    "yet-another-react-lightbox/": "https://aistudiocdn.com/yet-another-react-lightbox@^3.25.0/",
+    "yet-another-react-lightbox": "https://aistudiocdn.com/yet-another-react-lightbox@^3.25.0"
   }
 }
 </script>
-  <script type="module" crossorigin src="./assets/index-CGbSZ8Xk.js"></script>
+  <script type="module" crossorigin src="./assets/index-D2RYZDdE.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DXEvswlz.css">
 </head>
   <body>
     <div id="root"></div>
