@@ -113,129 +113,7 @@ private: false
 top: true
 ---
 
-# 欢迎来到我的博客`,Nj=`---\r
-title: P9140 [THUPC 2023 初赛] 背包\r
-platform: Luogu\r
-difficulty:  Provincial\r
-problemId: P9140\r
-tags: [贪心, 最短路, 同余最短路]\r
-date: 2025-12-20 20:05\r
-private: false\r
----\r
-\r
-### 思路\r
-核心思路：**同余最短路**\r
-\r
-注意到 $V$ 极大 ($10^{12}$) 但是 $v_i$ 较小 ($10^5$)，不难想到利用体积的同余性质。\r
-\r
-对于巨大的背包容量 $V$，显然应该尽可能多地装入“性价比”最高的物品，但由于必须恰好装满 $V$，我们需要用其他物品来凑齐余数。\r
-\r
-设第 $k$ 种物品的性价比最高，即 $\\frac{c_k}{v_k}$ 最大。\r
-设最终方案选择的物品集合，总价值为 $C$。\r
-\r
-我们将每种物品 $i$ 的贡献拆解来看。\r
-相对于“基准物品 $k$”，物品 $i$ 的“代价”是多少，那么实际价值 $C$ 与理想情况的差值是：\r
-$$\\Delta = V \\cdot \\frac{c_k}{v_k} - C$$\r
-我们要最大化 $C$，等价于最小化这个差值 $\\Delta$。\r
-\r
-为了消除分数，我们将等式两边同乘 $v_k$：\r
-$$\\Delta \\cdot v_k = V \\cdot c_k - C \\cdot v_k$$\r
-\r
-假设方案中选择了 $x_i$ 个物品 $i$，则：\r
-$$V = \\sum x_i v_i, \\quad C = \\sum x_i c_i$$\r
-\r
-代入上式：\r
-$$\\Delta \\cdot v_k = (\\sum x_i v_i) c_k - (\\sum x_i c_i) v_k \\\\ = \\sum x_i (v_i c_k - c_i v_k)$$\r
-\r
-我们定义每选取一个物品 $i$ 所带来的额外代价（边权）为：\r
-$$w_i = v_i c_k - c_i v_k$$\r
-\r
-由于 $k$ 是性价比最高的物品，即 $\\frac{c_k}{v_k} \\ge \\frac{c_i}{v_i}$，移项可得 $v_i c_k - c_i v_k \\ge 0$。\r
-因此，所有的边权 $w_i$ 都是非负的。\r
-这是一个关键性质，意味着我们可以使用 Dijkstra。\r
-\r
-我们现在的目标是：凑出体积 $V$，使得总的相对代价 $\\sum w_i$ 最小。\r
-由于 $V$ 很大，我们主要使用物品 $k$ 填充，剩下的部分由其他物品构成。\r
-我们可以只考虑模 $v_k$ 的余数。\r
-\r
-建图：\r
-- 节点：$0$ 到 $v_k - 1$，代表当前累计体积模 $v_k$ 的余数。\r
-- 边：对于每种物品 $i$（包括 $k$ 自己），从节点 $u$ 连向 $(u + v_i) \\pmod{v_k}$，边权为 $w_i = v_i c_k - c_i v_k$。\r
-- 距离 $dist[r]$：表示凑出体积 $W \\equiv r \\pmod{v_k}$ 所需的最小相对代价。\r
-\r
-运行一次 Dijkstra 后，对于每个询问 $V$：\r
-1. 计算目标余数 $r = V \\pmod{v_k}$。\r
-2. 若 $dist_{r} = \\infty$，说明无法凑出该余数，输出 -1。\r
-3. 否则，最大价值为：\r
-$$\\frac{V \\cdot c_k - dist_{r}}{v_k}$$\r
-\r
-**注意**：这种做法隐含了一个假设，即算出的路径对应的实际体积 $V' \\le V$。\r
-由于 $v_i$ 很小，最短路在图上绕圈的次数很少，实际 $V'$ 大约为 $v_{max}^2 \\approx 10^{10}$，远小于 $V$，因此是合法的。\r
-\r
-### AC代码\r
-\`\`\`cpp\r
-#include <bits/stdc++.h>\r
-#define ll long long\r
-using namespace std;\r
-const ll INF = 1e18;\r
-int n, q, best_idx;\r
-vector<int> v, c;\r
-vector<ll> dist;\r
-\r
-int find_best() {\r
-    int best = 1;\r
-    for (int i = 2; i <= n; i++)\r
-        if ((ll)c[i] * v[best] > (ll)c[best] * v[i])\r
-            best = i;\r
-    return best;\r
-}\r
-\r
-void dijkstra() {\r
-    dist.assign(v[best_idx], INF);\r
-    priority_queue<pair<ll, int>, vector<pair<ll, int>>, greater<>> pq;\r
-    dist[0] = 0;\r
-    pq.push({0, 0});\r
-    while (!pq.empty()) {\r
-        ll d = pq.top().first;\r
-        int u = pq.top().second;\r
-        pq.pop();\r
-        if (d > dist[u])\r
-            continue;\r
-        for (int i = 1; i <= n; i++) {\r
-            ll w = (ll)v[i] * c[best_idx] - (ll)c[i] * v[best_idx];\r
-            int next = (u + v[i]) % v[best_idx];\r
-            if (dist[u] + w < dist[next]) {\r
-                dist[next] = dist[u] + w;\r
-                pq.push({dist[next], next});\r
-            }\r
-        }\r
-    }\r
-}\r
-\r
-signed main() {\r
-    ios::sync_with_stdio(false);\r
-    cin.tie(0);\r
-\r
-    cin >> n >> q;\r
-    v.resize(n + 1);\r
-    c.resize(n + 1);\r
-    for (int i = 1; i <= n; i++)\r
-        cin >> v[i] >> c[i];\r
-    best_idx = find_best();\r
-    dijkstra();\r
-    while (q--) {\r
-        ll tot_v;\r
-        cin >> tot_v;\r
-        int r = tot_v % v[best_idx];\r
-        if (dist[r] == INF)\r
-            cout << -1 << '\\n';\r
-        else\r
-            cout << (tot_v * c[best_idx] - dist[r]) / v[best_idx] << '\\n';\r
-    }\r
-    return 0;\r
-}\r
-\`\`\`\r
-`,Rj=`---
+# 欢迎来到我的博客`,Nj=`---
 title: P10403 「XSOI-R1」跳跃游戏
 platform: Luogu
 difficulty: Improvement
@@ -387,7 +265,7 @@ int main() {
 因为 $\\gcd$ 每次只能下降，最多下降 $\\log A$ 次，所以时间复杂度：$O(n \\log A \\log n)$。\\
 另外 $st$ 表的预处理复杂度是 $O(n \\log n)$，不会成为瓶颈。
 
-如果有错误的话，感谢大家指正。`,Ij=`---
+如果有错误的话，感谢大家指正。`,Rj=`---
 title: P14576 Lamborghini (Remix)
 platform: Luogu
 difficulty: Normal
@@ -452,7 +330,130 @@ signed main() {
 }
 
 \`\`\`
-时间复杂度 $O(n)$。`,_j=`---
+时间复杂度 $O(n)$。`,Ij=`---\r
+title: P9140 [THUPC 2023 初赛] 背包\r
+platform: Luogu\r
+difficulty:  Provincial\r
+problemId: P9140\r
+tags: [贪心, 最短路, 同余最短路]\r
+date: 2025-12-20 19:56\r
+private: false\r
+---\r
+\r
+### 思路\r
+核心思路：**同余最短路**\r
+\r
+注意到 $V$ 极大 ($10^{12}$) 但是 $v_i$ 较小 ($10^5$)，不难想到利用体积的同余性质。\r
+\r
+对于巨大的背包容量 $V$，显然应该尽可能多地装入“性价比”最高的物品，但由于必须恰好装满 $V$，我们需要用其他物品来凑齐余数。\r
+\r
+设第 $k$ 种物品的性价比最高，即 $\\frac{c_k}{v_k}$ 最大。\r
+设最终方案选择的物品集合，总价值为 $C$。\r
+\r
+我们将每种物品 $i$ 的贡献拆解来看。\r
+相对于“基准物品 $k$”，物品 $i$ 的“代价”是多少，那么实际价值 $C$ 与理想情况的差值是：\r
+$$\\Delta = V \\cdot \\frac{c_k}{v_k} - C$$\r
+我们要最大化 $C$，等价于最小化这个差值 $\\Delta$。\r
+\r
+为了消除分数，我们将等式两边同乘 $v_k$：\r
+$$\\Delta \\cdot v_k = V \\cdot c_k - C \\cdot v_k$$\r
+\r
+假设方案中选择了 $x_i$ 个物品 $i$，则：\r
+$$V = \\sum x_i v_i, \\quad C = \\sum x_i c_i$$\r
+\r
+代入上式：\r
+$$\\Delta \\cdot v_k = (\\sum x_i v_i) c_k - (\\sum x_i c_i) v_k \\\\ = \\sum x_i (v_i c_k - c_i v_k)$$\r
+\r
+我们定义每选取一个物品 $i$ 所带来的额外代价（边权）为：\r
+$$w_i = v_i c_k - c_i v_k$$\r
+\r
+由于 $k$ 是性价比最高的物品，即 $\\frac{c_k}{v_k} \\ge \\frac{c_i}{v_i}$，移项可得 $v_i c_k - c_i v_k \\ge 0$。\r
+因此，所有的边权 $w_i$ 都是非负的。\r
+这是一个关键性质，意味着我们可以使用 Dijkstra。\r
+\r
+我们现在的目标是：凑出体积 $V$，使得总的相对代价 $\\sum w_i$ 最小。\r
+由于 $V$ 很大，我们主要使用物品 $k$ 填充，剩下的部分由其他物品构成。\r
+我们可以只考虑模 $v_k$ 的余数。\r
+\r
+建图：\r
+- 节点：$0$ 到 $v_k - 1$，代表当前累计体积模 $v_k$ 的余数。\r
+- 边：对于每种物品 $i$（包括 $k$ 自己），从节点 $u$ 连向 $(u + v_i) \\pmod{v_k}$，边权为 $w_i = v_i c_k - c_i v_k$。\r
+- 距离 $dist[r]$：表示凑出体积 $W \\equiv r \\pmod{v_k}$ 所需的最小相对代价。\r
+\r
+运行一次 Dijkstra 后，对于每个询问 $V$：\r
+1. 计算目标余数 $r = V \\pmod{v_k}$。\r
+2. 若 $dist_{r} = \\infty$，说明无法凑出该余数，输出 -1。\r
+3. 否则，最大价值为：\r
+$$\\frac{V \\cdot c_k - dist_{r}}{v_k}$$\r
+\r
+**注意**：这种做法隐含了一个假设，即算出的路径对应的实际体积 $V' \\le V$。\r
+由于 $v_i$ 很小，最短路在图上绕圈的次数很少，实际 $V'$ 大约为 $v_{max}^2 \\approx 10^{10}$，远小于 $V$，因此是合法的。\r
+\r
+### AC代码\r
+\`\`\`cpp\r
+#include <bits/stdc++.h>\r
+#define ll long long\r
+using namespace std;\r
+const ll INF = 1e18;\r
+int n, q, best_idx;\r
+vector<int> v, c;\r
+vector<ll> dist;\r
+\r
+int find_best() {\r
+    int best = 1;\r
+    for (int i = 2; i <= n; i++)\r
+        if ((ll)c[i] * v[best] > (ll)c[best] * v[i])\r
+            best = i;\r
+    return best;\r
+}\r
+\r
+void dijkstra() {\r
+    dist.assign(v[best_idx], INF);\r
+    priority_queue<pair<ll, int>, vector<pair<ll, int>>, greater<>> pq;\r
+    dist[0] = 0;\r
+    pq.push({0, 0});\r
+    while (!pq.empty()) {\r
+        ll d = pq.top().first;\r
+        int u = pq.top().second;\r
+        pq.pop();\r
+        if (d > dist[u])\r
+            continue;\r
+        for (int i = 1; i <= n; i++) {\r
+            ll w = (ll)v[i] * c[best_idx] - (ll)c[i] * v[best_idx];\r
+            int next = (u + v[i]) % v[best_idx];\r
+            if (dist[u] + w < dist[next]) {\r
+                dist[next] = dist[u] + w;\r
+                pq.push({dist[next], next});\r
+            }\r
+        }\r
+    }\r
+}\r
+\r
+signed main() {\r
+    ios::sync_with_stdio(false);\r
+    cin.tie(0);\r
+\r
+    cin >> n >> q;\r
+    v.resize(n + 1);\r
+    c.resize(n + 1);\r
+    for (int i = 1; i <= n; i++)\r
+        cin >> v[i] >> c[i];\r
+    best_idx = find_best();\r
+    dijkstra();\r
+    while (q--) {\r
+        ll tot_v;\r
+        cin >> tot_v;\r
+        int r = tot_v % v[best_idx];\r
+        if (dist[r] == INF)\r
+            cout << -1 << '\\n';\r
+        else\r
+            cout << (tot_v * c[best_idx] - dist[r]) / v[best_idx] << '\\n';\r
+    }\r
+    return 0;\r
+}\r
+\`\`\`\r
+\r
+`,_j=`---
 title: 关于闲话板块的测试
 date: 2025-11-25 23:10
 emoji: 😕
@@ -529,7 +530,7 @@ date: 2025-12-12
 `+e.slice(o+1):l+=e.slice(a),l.slice(1)}function AG(e){for(var t="",n,r,a,i=0;i<e.length;i++){if(n=e.charCodeAt(i),n>=55296&&n<=56319&&(r=e.charCodeAt(i+1),r>=56320&&r<=57343)){t+=y4((n-55296)*1024+r-56320+65536),i++;continue}a=zt[n],t+=!a&&jo(n)?e[i]:a||y4(n)}return t}function TG(e,t,n){var r="",a=e.tag,i,o;for(i=0,o=n.length;i<o;i+=1)Oi(e,t,n[i],!1,!1)&&(i!==0&&(r+=","+(e.condenseFlow?"":" ")),r+=e.dump);e.tag=a,e.dump="["+r+"]"}function CG(e,t,n,r){var a="",i=e.tag,o,s;for(o=0,s=n.length;o<s;o+=1)Oi(e,t+1,n[o],!0,!0)&&((!r||o!==0)&&(a+=ry(e,t)),e.dump&&ml===e.dump.charCodeAt(0)?a+="-":a+="- ",a+=e.dump);e.tag=i,e.dump=a||"[]"}function NG(e,t,n){var r="",a=e.tag,i=Object.keys(n),o,s,l,u,c;for(o=0,s=i.length;o<s;o+=1)c="",o!==0&&(c+=", "),e.condenseFlow&&(c+='"'),l=i[o],u=n[l],Oi(e,t,l,!1,!1)&&(e.dump.length>1024&&(c+="? "),c+=e.dump+(e.condenseFlow?'"':"")+":"+(e.condenseFlow?"":" "),Oi(e,t,u,!1,!1)&&(c+=e.dump,r+=c));e.tag=a,e.dump="{"+r+"}"}function RG(e,t,n,r){var a="",i=e.tag,o=Object.keys(n),s,l,u,c,d,f;if(e.sortKeys===!0)o.sort();else if(typeof e.sortKeys=="function")o.sort(e.sortKeys);else if(e.sortKeys)throw new Bl("sortKeys must be a boolean or a function");for(s=0,l=o.length;s<l;s+=1)f="",(!r||s!==0)&&(f+=ry(e,t)),u=o[s],c=n[u],Oi(e,t+1,u,!0,!0,!0)&&(d=e.tag!==null&&e.tag!=="?"||e.dump&&e.dump.length>1024,d&&(e.dump&&ml===e.dump.charCodeAt(0)?f+="?":f+="? "),f+=e.dump,d&&(f+=ry(e,t)),Oi(e,t+1,c,!0,d)&&(e.dump&&ml===e.dump.charCodeAt(0)?f+=":":f+=": ",f+=e.dump,a+=f));e.tag=i,e.dump=a||"{}"}function k4(e,t,n){var r,a,i,o,s,l;for(a=n?e.explicitTypes:e.implicitTypes,i=0,o=a.length;i<o;i+=1)if(s=a[i],(s.instanceOf||s.predicate)&&(!s.instanceOf||typeof t=="object"&&t instanceof s.instanceOf)&&(!s.predicate||s.predicate(t))){if(e.tag=n?s.tag:"?",s.represent){if(l=e.styleMap[s.tag]||s.defaultStyle,k_.call(s.represent)==="[object Function]")r=s.represent(t,l);else if(A_.call(s.represent,l))r=s.represent[l](t,l);else throw new Bl("!<"+s.tag+'> tag resolver accepts not "'+l+'" style');e.dump=r}return!0}return!1}function Oi(e,t,n,r,a,i){e.tag=null,e.dump=n,k4(e,n,!1)||k4(e,n,!0);var o=k_.call(e.dump);r&&(r=e.flowLevel<0||e.flowLevel>t);var s=o==="[object Object]"||o==="[object Array]",l,u;if(s&&(l=e.duplicates.indexOf(n),u=l!==-1),(e.tag!==null&&e.tag!=="?"||u||e.indent!==2&&t>0)&&(a=!1),u&&e.usedDuplicates[l])e.dump="*ref_"+l;else{if(s&&u&&!e.usedDuplicates[l]&&(e.usedDuplicates[l]=!0),o==="[object Object]")r&&Object.keys(e.dump).length!==0?(RG(e,t,e.dump,a),u&&(e.dump="&ref_"+l+e.dump)):(NG(e,t,e.dump),u&&(e.dump="&ref_"+l+" "+e.dump));else if(o==="[object Array]"){var c=e.noArrayIndent&&t>0?t-1:t;r&&e.dump.length!==0?(CG(e,c,e.dump,a),u&&(e.dump="&ref_"+l+e.dump)):(TG(e,c,e.dump),u&&(e.dump="&ref_"+l+" "+e.dump))}else if(o==="[object String]")e.tag!=="?"&&wG(e,e.dump,t,i);else{if(e.skipInvalid)return!1;throw new Bl("unacceptable kind of an object to dump "+o)}e.tag!==null&&e.tag!=="?"&&(e.dump="!<"+e.tag+"> "+e.dump)}return!0}function IG(e,t){var n=[],r=[],a,i;for(ay(e,n,r),a=0,i=r.length;a<i;a+=1)t.duplicates.push(n[r[a]]);t.usedDuplicates=new Array(i)}function ay(e,t,n){var r,a,i;if(e!==null&&typeof e=="object")if(a=t.indexOf(e),a!==-1)n.indexOf(a)===-1&&n.push(a);else if(t.push(e),Array.isArray(e))for(a=0,i=e.length;a<i;a+=1)ay(e[a],t,n);else for(r=Object.keys(e),a=0,i=r.length;a<i;a+=1)ay(e[r[a]],t,n)}function B_(e,t){t=t||{};var n=new yG(t);return n.noRefs||IG(e,n),Oi(n,0,e,!0,!0)?n.dump+`
 `:""}function _G(e,t){return B_(e,Pl.extend({schema:Jq},t))}mx.dump=B_;mx.safeDump=_G;var Ld=Dl,z_=mx;function Dd(e){return function(){throw new Error("Function "+e+" is deprecated and cannot be used.")}}ut.Type=Ct;ut.Schema=Jo;ut.FAILSAFE_SCHEMA=dx;ut.JSON_SCHEMA=o_;ut.CORE_SCHEMA=s_;ut.DEFAULT_SAFE_SCHEMA=Fl;ut.DEFAULT_FULL_SCHEMA=_d;ut.load=Ld.load;ut.loadAll=Ld.loadAll;ut.safeLoad=Ld.safeLoad;ut.safeLoadAll=Ld.safeLoadAll;ut.dump=z_.dump;ut.safeDump=z_.safeDump;ut.YAMLException=Ml;ut.MINIMAL_SCHEMA=dx;ut.SAFE_SCHEMA=Fl;ut.DEFAULT_SCHEMA=_d;ut.scan=Dd("scan");ut.parse=Dd("parse");ut.compose=Dd("compose");ut.addConstructor=Dd("addConstructor");var OG=ut,LG=OG,A4=LG,DG="\\ufeff?",MG=typeof process<"u"?process.platform:"",FG="^("+DG+"(= yaml =|---)$([\\s\\S]*?)^(?:\\2|\\.\\.\\.)\\s*$"+(MG==="win32"?"\\r?":"")+"(?:\\n)?)",U_=new RegExp(FG,"m");ux.exports=PG;ux.exports.test=UG;function PG(e,t){e=e||"";var n={allowUnsafe:!1};t=t instanceof Object?{...n,...t}:n,t.allowUnsafe=!!t.allowUnsafe;var r=e.split(/(\r?\n)/);return r[0]&&/= yaml =|---/.test(r[0])?zG(e,t.allowUnsafe):{attributes:{},body:e,bodyBegin:1}}function BG(e,t){for(var n=1,r=t.indexOf(`
 `),a=e.index+e[0].length;r!==-1;){if(r>=a)return n;n++,r=t.indexOf(`
-`,r+1)}return n}function zG(e,t){var n=U_.exec(e);if(!n)return{attributes:{},body:e,bodyBegin:1};var r=t?A4.load:A4.safeLoad,a=n[n.length-1].replace(/^\s+|\s+$/g,""),i=r(a)||{},o=e.replace(n[0],""),s=BG(n,e);return{attributes:i,body:o,bodyBegin:s,frontmatter:a}}function UG(e){return e=e||"",U_.test(e)}var jG=ux.exports;const T4=Sl(jG);var tc=(e=>(e.TECH="Technology",e.LIFE="Life",e.CODING="Coding",e))(tc||{}),nc=(e=>(e.LUOGU="Luogu",e.CODEFORCES="Codeforces",e.ATCODER="AtCoder",e))(nc||{}),de=(e=>(e.INTRO="Intro",e.BASIC="Basic",e.NORMAL="Normal",e.IMPROVEMENT="Improvement",e.ADVANCED="Advanced",e.PROVINCIAL="Provincial",e.NOI="NOI",e))(de||{});const zl=e=>(T4.default||T4)(e),j_=(e,t=100)=>e.slice(0,t*2).replace(/[#*`\[\]]/g,"").replace(/\n/g," ").trim().slice(0,t)+"...",$_=e=>{const t=e.replace(/[#*`\[\]\(\)\n\r\t]/g," "),n=(t.match(/[\u4e00-\u9fa5]/g)||[]).length,r=(t.match(/\b\w+\b/g)||[]).length,a=n+r,i=Math.ceil(a/400);return{wordCount:a,readingTime:i}},Ul=e=>{if(!e)return new Date().toISOString().split("T")[0];const t=new Date(e);if(isNaN(t.getTime()))return String(e).replace(/\./g,"-");const n=t.getFullYear(),r=String(t.getMonth()+1).padStart(2,"0"),a=String(t.getDate()).padStart(2,"0"),i=String(t.getHours()).padStart(2,"0"),o=String(t.getMinutes()).padStart(2,"0");return`${n}-${r}-${a} ${i}:${o}`},Wp=Object.assign({"/src/content/articles/NOIP2025.md":Tj,"/src/content/articles/first-blog.md":Cj}),$G=()=>(console.log(`[ContentLoader] Loading articles. Found ${Object.keys(Wp).length} files.`),Object.keys(Wp).map(e=>{var t;try{const n=Wp[e],{attributes:r,body:a}=zl(n);let i=tc.LIFE;r.category==="Technology"&&(i=tc.TECH),r.category==="Coding"&&(i=tc.CODING);const{wordCount:o,readingTime:s}=$_(a);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",title:r.title||"Untitled",date:Ul(r.date),category:i,tags:r.tags||[],excerpt:j_(a),content:a,private:r.private||!1,top:r.top||!1,wordCount:o,readingTime:s}}catch(n){return console.error(`Error loading article: ${e}`,n),null}}).filter(e=>e!==null)),Yp=Object.assign({"/src/content/solutions/P9140.md":Nj,"/src/content/solutions/p10403.md":Rj,"/src/content/solutions/p14576.md":Ij}),qG=()=>(console.log(`[ContentLoader] Loading solutions. Found ${Object.keys(Yp).length} files.`),Object.keys(Yp).map(e=>{var t;try{const n=Yp[e],{attributes:r,body:a}=zl(n);let i=nc.LUOGU;r.platform==="Codeforces"&&(i=nc.CODEFORCES),r.platform==="AtCoder"&&(i=nc.ATCODER);let o=de.INTRO;const s={Intro:de.INTRO,Basic:de.BASIC,Normal:de.NORMAL,Improvement:de.IMPROVEMENT,Advanced:de.ADVANCED,Provincial:de.PROVINCIAL,NOI:de.NOI};r.difficulty&&s[r.difficulty]&&(o=s[r.difficulty]);const{wordCount:l,readingTime:u}=$_(a);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",title:r.title||"Untitled",platform:i,difficulty:o,problemId:r.problemId||"Unknown",tags:r.tags||[],excerpt:j_(a),content:a,private:r.private||!1,date:Ul(r.date),wordCount:l,readingTime:u}}catch(n){return console.error(`Error loading solution: ${e}`,n),null}}).filter(e=>e!==null)),Kp=Object.assign({"/src/content/essays/test.md":_j,"/src/content/essays/test2.md":Oj}),GG=()=>(console.log(`[ContentLoader] Loading essays. Found ${Object.keys(Kp).length} files.`),Object.keys(Kp).map(e=>{var t;try{const n=Kp[e],{attributes:r,body:a}=zl(n);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",title:r.title||"Untitled",date:Ul(r.date),content:a,emoji:r.emoji}}catch(n){return console.error(`Error loading essay: ${e}`,n),null}}).filter(e=>e!==null)),Xp=Object.assign({"/src/content/moods/2025.11.24.md":Lj,"/src/content/moods/2025.11.29.md":Dj,"/src/content/moods/2025.12.19.md":Mj}),HG=()=>(console.log(`[ContentLoader] Loading moods. Found ${Object.keys(Xp).length} files.`),Object.keys(Xp).map(e=>{var t;try{const n=Xp[e],{attributes:r,body:a}=zl(n);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",date:Ul(r.date),emoji:r.emoji||"📝",content:a.trim()}}catch(n){return console.error(`Error loading mood: ${e}`,n),null}}).filter(e=>e!==null)),C4=Object.assign({"/src/content/friends.json":Fj}),VG=()=>{try{const e="/src/content/friends.json";if(C4[e]){const t=C4[e];return JSON.parse(t)}return[]}catch(e){return console.error("Error loading friends:",e),[]}},Zp=Object.assign({"/src/content/announcements/1.md":Pj}),WG=()=>(console.log(`[ContentLoader] Loading announcements. Found ${Object.keys(Zp).length} files.`),Object.keys(Zp).map(e=>{var t;try{const n=Zp[e],{attributes:r,body:a}=zl(n);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",title:r.title||"Untitled",date:Ul(r.date),content:a.trim()}}catch(n){return console.error(`Error loading announcement: ${e}`,n),null}}).filter(e=>e!==null).sort((e,t)=>new Date(t.date).getTime()-new Date(e.date).getTime())),An=$G(),Xr=qG(),Li=GG(),q_=HG(),G_=WG(),YG=({isOpen:e,onClose:t})=>{const[n,r]=T.useState(""),[a,i]=T.useState(0),o=Xo(),s=T.useMemo(()=>{const c=An.map(p=>({...p,type:"article",url:`/articles/${p.id}`})),d=Xr.map(p=>({...p,type:"solution",url:`/solutions/${p.id}`})),f=Li.map(p=>({...p,type:"essay",url:`/essays/${p.id}`}));return[...c,...d,...f]},[]),l=T.useMemo(()=>new Qo(s,{keys:[{name:"title",weight:.7},{name:"tags",weight:.5},{name:"excerpt",weight:.3},{name:"content",weight:.1}],threshold:.4,includeMatches:!0}),[s]),u=T.useMemo(()=>n?l.search(n).slice(0,8).map(c=>c.item):[],[n,l]);return T.useEffect(()=>{e&&i(0)},[e,n]),T.useEffect(()=>{const c=d=>{e&&(d.key==="ArrowDown"?(d.preventDefault(),i(f=>(f+1)%Math.min(u.length,8))):d.key==="ArrowUp"?(d.preventDefault(),i(f=>(f-1+Math.min(u.length,8))%Math.min(u.length,8))):d.key==="Enter"?(d.preventDefault(),u[a]&&(o(u[a].url),t())):d.key==="Escape"&&t())};return window.addEventListener("keydown",c),()=>window.removeEventListener("keydown",c)},[e,u,a,o,t]),h.jsx(Ll,{children:e&&h.jsxs(ue.div,{initial:{opacity:0},animate:{opacity:1},exit:{opacity:0},className:"fixed inset-0 z-[200] flex items-start justify-center pt-[15vh] px-4",children:[h.jsx("div",{className:"absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm",onClick:t}),h.jsxs(ue.div,{initial:{opacity:0,scale:.95,y:-20},animate:{opacity:1,scale:1,y:0},exit:{opacity:0,scale:.95,y:-20},className:"relative w-full max-w-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/60 dark:border-gray-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh]",children:[h.jsxs("div",{className:"flex items-center px-4 py-4 border-b border-gray-200/50 dark:border-gray-800/50",children:[h.jsx(Ia,{className:"w-5 h-5 text-gray-400"}),h.jsx("input",{type:"text",autoFocus:!0,placeholder:"搜索文章、题解、闲话...",className:"flex-1 bg-transparent border-none outline-none px-4 text-lg text-gray-900 dark:text-white placeholder-gray-400",value:n,onChange:c=>r(c.target.value)}),h.jsx("div",{className:"hidden md:flex items-center gap-1 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded",children:h.jsx("span",{className:"text-xs",children:"ESC"})})]}),h.jsx("div",{className:"overflow-y-auto p-2 space-y-1 custom-scrollbar",children:u.length>0?u.map((c,d)=>h.jsxs("div",{onClick:()=>{o(c.url),t()},className:`flex items-center gap-4 px-4 py-3 rounded-xl cursor-pointer transition-colors ${d===a?"bg-blue-500/10 dark:bg-blue-500/20":"hover:bg-gray-100/50 dark:hover:bg-gray-800/50"}`,children:[h.jsx("div",{className:`p-2 rounded-lg ${c.type==="article"?"bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400":c.type==="solution"?"bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400":"bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"}`,children:c.type==="article"?h.jsx(Nl,{size:18}):c.type==="solution"?h.jsx(Fv,{size:18}):h.jsx(Zo,{size:18})}),h.jsxs("div",{className:"flex-1 min-w-0",children:[h.jsxs("div",{className:"flex items-center gap-2",children:[h.jsx("h4",{className:`font-medium text-sm md:text-base truncate ${d===a?"text-blue-600 dark:text-blue-400":"text-gray-900 dark:text-gray-100"}`,children:c.title}),"tags"in c&&c.tags&&h.jsx("div",{className:"hidden sm:flex gap-1",children:c.tags.slice(0,2).map(f=>h.jsxs("span",{className:"text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-gray-500 dark:text-gray-400",children:["#",f]},f))})]}),"excerpt"in c?h.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5",children:c.excerpt}):h.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5",children:c.date})]}),d===a&&h.jsx(ws,{size:16,className:"text-blue-500 dark:text-blue-400"})]},c.id+c.type)):h.jsx("div",{className:"py-12 text-center text-gray-500 dark:text-gray-400",children:n?"没有找到相关内容":"输入关键词开始搜索..."})}),h.jsxs("div",{className:"px-4 py-3 border-t border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between text-xs text-gray-400",children:[h.jsxs("div",{className:"flex gap-4",children:[h.jsxs("span",{className:"flex items-center gap-1",children:[h.jsx("kbd",{className:"font-sans bg-gray-100 dark:bg-gray-800 px-1 rounded",children:"↵"})," 选择"]}),h.jsxs("span",{className:"flex items-center gap-1",children:[h.jsx("kbd",{className:"font-sans bg-gray-100 dark:bg-gray-800 px-1 rounded",children:"↑↓"})," 导航"]})]}),h.jsx("span",{children:"Jccc_0310's Blog"})]})]})]})})},KG=""+new URL("site-background-ysvtcUk8.mp4",import.meta.url).href,H_=T.createContext({openSearch:()=>{}}),V_=()=>T.useContext(H_),XG=({children:e,isDark:t,toggleTheme:n,isAdmin:r,setIsAdmin:a})=>{const[i,o]=T.useState(!1);T.useEffect(()=>{const l=u=>{(u.metaKey||u.ctrlKey)&&u.key==="k"&&(u.preventDefault(),o(!0))};return window.addEventListener("keydown",l),()=>window.removeEventListener("keydown",l)},[]);const s=()=>o(!0);return h.jsx(H_.Provider,{value:{openSearch:s},children:h.jsxs("div",{className:`min-h-screen flex flex-col relative selection:bg-pink-300 dark:selection:bg-fuchsia-900 text-gray-900 dark:text-gray-100 ${t?"dark":""}`,children:[h.jsxs("div",{className:"fixed inset-0 z-[-2] overflow-hidden",children:[h.jsx("video",{autoPlay:!0,loop:!0,muted:!0,playsInline:!0,className:"absolute w-full h-full object-cover",children:h.jsx("source",{src:KG,type:"video/mp4"})}),h.jsx("div",{className:"absolute inset-0 dark:bg-black/40"})]}),h.jsx("div",{className:"bg-noise fixed inset-0 z-[-1] pointer-events-none mix-blend-overlay opacity-40 dark:opacity-20"}),h.jsx(UU,{isDark:t,toggleTheme:n,isAdmin:r,setIsAdmin:a,onSearchClick:s}),h.jsx(YG,{isOpen:i,onClose:()=>o(!1)}),h.jsx("main",{className:"flex-grow pt-28 pb-12 px-4 sm:px-6 lg:px-8 max-w-[100rem] mx-auto w-full z-10",children:e}),h.jsx("footer",{className:"mt-auto py-8 text-center z-10 border-t border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-black/30 glass-panel",children:h.jsxs("p",{className:"text-sm text-gray-700 dark:text-gray-400 font-medium",children:["© ",new Date().getFullYear(),h.jsx("span",{className:"mx-2",children:"·"}),"设计与构建 by ",h.jsx("span",{className:"font-mono text-blue-600 dark:text-blue-500",children:"Jccc_0310"})]})})]})})},ZG=()=>{const{pathname:e}=Ya();return T.useEffect(()=>{window.scrollTo(0,0)},[e]),null},Ze=({children:e,className:t="",hoverEffect:n=!1,onClick:r,delay:a=0,noAnimation:i=!1})=>h.jsxs(ue.div,{initial:i?void 0:{opacity:0,y:20},whileInView:i?void 0:{opacity:1,y:0},viewport:i?void 0:{once:!0,margin:"-50px"},transition:{duration:.6,delay:a,ease:"easeOut"},whileHover:n?{scale:1.02,y:-5,boxShadow:"0 20px 40px -10px rgba(0,0,0,0.1)",transition:{type:"spring",stiffness:400,damping:25}}:void 0,whileTap:n?{scale:.98}:void 0,onClick:r,className:`
+`,r+1)}return n}function zG(e,t){var n=U_.exec(e);if(!n)return{attributes:{},body:e,bodyBegin:1};var r=t?A4.load:A4.safeLoad,a=n[n.length-1].replace(/^\s+|\s+$/g,""),i=r(a)||{},o=e.replace(n[0],""),s=BG(n,e);return{attributes:i,body:o,bodyBegin:s,frontmatter:a}}function UG(e){return e=e||"",U_.test(e)}var jG=ux.exports;const T4=Sl(jG);var tc=(e=>(e.TECH="Technology",e.LIFE="Life",e.CODING="Coding",e))(tc||{}),nc=(e=>(e.LUOGU="Luogu",e.CODEFORCES="Codeforces",e.ATCODER="AtCoder",e))(nc||{}),de=(e=>(e.INTRO="Intro",e.BASIC="Basic",e.NORMAL="Normal",e.IMPROVEMENT="Improvement",e.ADVANCED="Advanced",e.PROVINCIAL="Provincial",e.NOI="NOI",e))(de||{});const zl=e=>(T4.default||T4)(e),j_=(e,t=100)=>e.slice(0,t*2).replace(/[#*`\[\]]/g,"").replace(/\n/g," ").trim().slice(0,t)+"...",$_=e=>{const t=e.replace(/[#*`\[\]\(\)\n\r\t]/g," "),n=(t.match(/[\u4e00-\u9fa5]/g)||[]).length,r=(t.match(/\b\w+\b/g)||[]).length,a=n+r,i=Math.ceil(a/400);return{wordCount:a,readingTime:i}},Ul=e=>{if(!e)return new Date().toISOString().split("T")[0];const t=new Date(e);if(isNaN(t.getTime()))return String(e).replace(/\./g,"-");const n=t.getFullYear(),r=String(t.getMonth()+1).padStart(2,"0"),a=String(t.getDate()).padStart(2,"0"),i=String(t.getHours()).padStart(2,"0"),o=String(t.getMinutes()).padStart(2,"0");return`${n}-${r}-${a} ${i}:${o}`},Wp=Object.assign({"/src/content/articles/NOIP2025.md":Tj,"/src/content/articles/first-blog.md":Cj}),$G=()=>(console.log(`[ContentLoader] Loading articles. Found ${Object.keys(Wp).length} files.`),Object.keys(Wp).map(e=>{var t;try{const n=Wp[e],{attributes:r,body:a}=zl(n);let i=tc.LIFE;r.category==="Technology"&&(i=tc.TECH),r.category==="Coding"&&(i=tc.CODING);const{wordCount:o,readingTime:s}=$_(a);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",title:r.title||"Untitled",date:Ul(r.date),category:i,tags:r.tags||[],excerpt:j_(a),content:a,private:r.private||!1,top:r.top||!1,wordCount:o,readingTime:s}}catch(n){return console.error(`Error loading article: ${e}`,n),null}}).filter(e=>e!==null)),Yp=Object.assign({"/src/content/solutions/p10403.md":Nj,"/src/content/solutions/p14576.md":Rj,"/src/content/solutions/p9140.md":Ij}),qG=()=>(console.log(`[ContentLoader] Loading solutions. Found ${Object.keys(Yp).length} files.`),Object.keys(Yp).map(e=>{var t;try{const n=Yp[e],{attributes:r,body:a}=zl(n);let i=nc.LUOGU;r.platform==="Codeforces"&&(i=nc.CODEFORCES),r.platform==="AtCoder"&&(i=nc.ATCODER);let o=de.INTRO;const s={Intro:de.INTRO,Basic:de.BASIC,Normal:de.NORMAL,Improvement:de.IMPROVEMENT,Advanced:de.ADVANCED,Provincial:de.PROVINCIAL,NOI:de.NOI};r.difficulty&&s[r.difficulty]&&(o=s[r.difficulty]);const{wordCount:l,readingTime:u}=$_(a);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",title:r.title||"Untitled",platform:i,difficulty:o,problemId:r.problemId||"Unknown",tags:r.tags||[],excerpt:j_(a),content:a,private:r.private||!1,date:Ul(r.date),wordCount:l,readingTime:u}}catch(n){return console.error(`Error loading solution: ${e}`,n),null}}).filter(e=>e!==null)),Kp=Object.assign({"/src/content/essays/test.md":_j,"/src/content/essays/test2.md":Oj}),GG=()=>(console.log(`[ContentLoader] Loading essays. Found ${Object.keys(Kp).length} files.`),Object.keys(Kp).map(e=>{var t;try{const n=Kp[e],{attributes:r,body:a}=zl(n);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",title:r.title||"Untitled",date:Ul(r.date),content:a,emoji:r.emoji}}catch(n){return console.error(`Error loading essay: ${e}`,n),null}}).filter(e=>e!==null)),Xp=Object.assign({"/src/content/moods/2025.11.24.md":Lj,"/src/content/moods/2025.11.29.md":Dj,"/src/content/moods/2025.12.19.md":Mj}),HG=()=>(console.log(`[ContentLoader] Loading moods. Found ${Object.keys(Xp).length} files.`),Object.keys(Xp).map(e=>{var t;try{const n=Xp[e],{attributes:r,body:a}=zl(n);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",date:Ul(r.date),emoji:r.emoji||"📝",content:a.trim()}}catch(n){return console.error(`Error loading mood: ${e}`,n),null}}).filter(e=>e!==null)),C4=Object.assign({"/src/content/friends.json":Fj}),VG=()=>{try{const e="/src/content/friends.json";if(C4[e]){const t=C4[e];return JSON.parse(t)}return[]}catch(e){return console.error("Error loading friends:",e),[]}},Zp=Object.assign({"/src/content/announcements/1.md":Pj}),WG=()=>(console.log(`[ContentLoader] Loading announcements. Found ${Object.keys(Zp).length} files.`),Object.keys(Zp).map(e=>{var t;try{const n=Zp[e],{attributes:r,body:a}=zl(n);return{id:((t=e.split("/").pop())==null?void 0:t.replace(".md",""))||"",title:r.title||"Untitled",date:Ul(r.date),content:a.trim()}}catch(n){return console.error(`Error loading announcement: ${e}`,n),null}}).filter(e=>e!==null).sort((e,t)=>new Date(t.date).getTime()-new Date(e.date).getTime())),An=$G(),Xr=qG(),Li=GG(),q_=HG(),G_=WG(),YG=({isOpen:e,onClose:t})=>{const[n,r]=T.useState(""),[a,i]=T.useState(0),o=Xo(),s=T.useMemo(()=>{const c=An.map(p=>({...p,type:"article",url:`/articles/${p.id}`})),d=Xr.map(p=>({...p,type:"solution",url:`/solutions/${p.id}`})),f=Li.map(p=>({...p,type:"essay",url:`/essays/${p.id}`}));return[...c,...d,...f]},[]),l=T.useMemo(()=>new Qo(s,{keys:[{name:"title",weight:.7},{name:"tags",weight:.5},{name:"excerpt",weight:.3},{name:"content",weight:.1}],threshold:.4,includeMatches:!0}),[s]),u=T.useMemo(()=>n?l.search(n).slice(0,8).map(c=>c.item):[],[n,l]);return T.useEffect(()=>{e&&i(0)},[e,n]),T.useEffect(()=>{const c=d=>{e&&(d.key==="ArrowDown"?(d.preventDefault(),i(f=>(f+1)%Math.min(u.length,8))):d.key==="ArrowUp"?(d.preventDefault(),i(f=>(f-1+Math.min(u.length,8))%Math.min(u.length,8))):d.key==="Enter"?(d.preventDefault(),u[a]&&(o(u[a].url),t())):d.key==="Escape"&&t())};return window.addEventListener("keydown",c),()=>window.removeEventListener("keydown",c)},[e,u,a,o,t]),h.jsx(Ll,{children:e&&h.jsxs(ue.div,{initial:{opacity:0},animate:{opacity:1},exit:{opacity:0},className:"fixed inset-0 z-[200] flex items-start justify-center pt-[15vh] px-4",children:[h.jsx("div",{className:"absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm",onClick:t}),h.jsxs(ue.div,{initial:{opacity:0,scale:.95,y:-20},animate:{opacity:1,scale:1,y:0},exit:{opacity:0,scale:.95,y:-20},className:"relative w-full max-w-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/60 dark:border-gray-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh]",children:[h.jsxs("div",{className:"flex items-center px-4 py-4 border-b border-gray-200/50 dark:border-gray-800/50",children:[h.jsx(Ia,{className:"w-5 h-5 text-gray-400"}),h.jsx("input",{type:"text",autoFocus:!0,placeholder:"搜索文章、题解、闲话...",className:"flex-1 bg-transparent border-none outline-none px-4 text-lg text-gray-900 dark:text-white placeholder-gray-400",value:n,onChange:c=>r(c.target.value)}),h.jsx("div",{className:"hidden md:flex items-center gap-1 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded",children:h.jsx("span",{className:"text-xs",children:"ESC"})})]}),h.jsx("div",{className:"overflow-y-auto p-2 space-y-1 custom-scrollbar",children:u.length>0?u.map((c,d)=>h.jsxs("div",{onClick:()=>{o(c.url),t()},className:`flex items-center gap-4 px-4 py-3 rounded-xl cursor-pointer transition-colors ${d===a?"bg-blue-500/10 dark:bg-blue-500/20":"hover:bg-gray-100/50 dark:hover:bg-gray-800/50"}`,children:[h.jsx("div",{className:`p-2 rounded-lg ${c.type==="article"?"bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400":c.type==="solution"?"bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400":"bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"}`,children:c.type==="article"?h.jsx(Nl,{size:18}):c.type==="solution"?h.jsx(Fv,{size:18}):h.jsx(Zo,{size:18})}),h.jsxs("div",{className:"flex-1 min-w-0",children:[h.jsxs("div",{className:"flex items-center gap-2",children:[h.jsx("h4",{className:`font-medium text-sm md:text-base truncate ${d===a?"text-blue-600 dark:text-blue-400":"text-gray-900 dark:text-gray-100"}`,children:c.title}),"tags"in c&&c.tags&&h.jsx("div",{className:"hidden sm:flex gap-1",children:c.tags.slice(0,2).map(f=>h.jsxs("span",{className:"text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-gray-500 dark:text-gray-400",children:["#",f]},f))})]}),"excerpt"in c?h.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5",children:c.excerpt}):h.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5",children:c.date})]}),d===a&&h.jsx(ws,{size:16,className:"text-blue-500 dark:text-blue-400"})]},c.id+c.type)):h.jsx("div",{className:"py-12 text-center text-gray-500 dark:text-gray-400",children:n?"没有找到相关内容":"输入关键词开始搜索..."})}),h.jsxs("div",{className:"px-4 py-3 border-t border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between text-xs text-gray-400",children:[h.jsxs("div",{className:"flex gap-4",children:[h.jsxs("span",{className:"flex items-center gap-1",children:[h.jsx("kbd",{className:"font-sans bg-gray-100 dark:bg-gray-800 px-1 rounded",children:"↵"})," 选择"]}),h.jsxs("span",{className:"flex items-center gap-1",children:[h.jsx("kbd",{className:"font-sans bg-gray-100 dark:bg-gray-800 px-1 rounded",children:"↑↓"})," 导航"]})]}),h.jsx("span",{children:"Jccc_0310's Blog"})]})]})]})})},KG=""+new URL("site-background-ysvtcUk8.mp4",import.meta.url).href,H_=T.createContext({openSearch:()=>{}}),V_=()=>T.useContext(H_),XG=({children:e,isDark:t,toggleTheme:n,isAdmin:r,setIsAdmin:a})=>{const[i,o]=T.useState(!1);T.useEffect(()=>{const l=u=>{(u.metaKey||u.ctrlKey)&&u.key==="k"&&(u.preventDefault(),o(!0))};return window.addEventListener("keydown",l),()=>window.removeEventListener("keydown",l)},[]);const s=()=>o(!0);return h.jsx(H_.Provider,{value:{openSearch:s},children:h.jsxs("div",{className:`min-h-screen flex flex-col relative selection:bg-pink-300 dark:selection:bg-fuchsia-900 text-gray-900 dark:text-gray-100 ${t?"dark":""}`,children:[h.jsxs("div",{className:"fixed inset-0 z-[-2] overflow-hidden",children:[h.jsx("video",{autoPlay:!0,loop:!0,muted:!0,playsInline:!0,className:"absolute w-full h-full object-cover",children:h.jsx("source",{src:KG,type:"video/mp4"})}),h.jsx("div",{className:"absolute inset-0 dark:bg-black/40"})]}),h.jsx("div",{className:"bg-noise fixed inset-0 z-[-1] pointer-events-none mix-blend-overlay opacity-40 dark:opacity-20"}),h.jsx(UU,{isDark:t,toggleTheme:n,isAdmin:r,setIsAdmin:a,onSearchClick:s}),h.jsx(YG,{isOpen:i,onClose:()=>o(!1)}),h.jsx("main",{className:"flex-grow pt-28 pb-12 px-4 sm:px-6 lg:px-8 max-w-[100rem] mx-auto w-full z-10",children:e}),h.jsx("footer",{className:"mt-auto py-8 text-center z-10 border-t border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-black/30 glass-panel",children:h.jsxs("p",{className:"text-sm text-gray-700 dark:text-gray-400 font-medium",children:["© ",new Date().getFullYear(),h.jsx("span",{className:"mx-2",children:"·"}),"设计与构建 by ",h.jsx("span",{className:"font-mono text-blue-600 dark:text-blue-500",children:"Jccc_0310"})]})})]})})},ZG=()=>{const{pathname:e}=Ya();return T.useEffect(()=>{window.scrollTo(0,0)},[e]),null},Ze=({children:e,className:t="",hoverEffect:n=!1,onClick:r,delay:a=0,noAnimation:i=!1})=>h.jsxs(ue.div,{initial:i?void 0:{opacity:0,y:20},whileInView:i?void 0:{opacity:1,y:0},viewport:i?void 0:{once:!0,margin:"-50px"},transition:{duration:.6,delay:a,ease:"easeOut"},whileHover:n?{scale:1.02,y:-5,boxShadow:"0 20px 40px -10px rgba(0,0,0,0.1)",transition:{type:"spring",stiffness:400,damping:25}}:void 0,whileTap:n?{scale:.98}:void 0,onClick:r,className:`
         glass-panel
         relative overflow-hidden
         bg-white/50 dark:bg-gray-900/50
